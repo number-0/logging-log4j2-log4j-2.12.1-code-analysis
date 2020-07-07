@@ -60,6 +60,9 @@ import org.apache.logging.log4j.util.PropertiesUtil;
 
 
 /**
+ * LoggerContext是日志记录系统的锚。它维护一个由请求的所有Loggers的列表应用程序和对Configuration的引用。
+ * Configuration将包含配置的loggers、appenders、filters等，并将在重新配置发生时自动更新。
+ *
  * The LoggerContext is the anchor for the logging system. It maintains a list of all the loggers requested by
  * applications and a reference to the Configuration. The Configuration will contain the configured loggers, appenders,
  * filters, etc and will be atomically updated whenever a reconfigure occurs.
@@ -492,7 +495,7 @@ public class LoggerContext extends AbstractLifeCycle
             return logger;
         }
 
-        //
+        //实例化Logger并置入loggerRegistry
         logger = newInstance(this, name, messageFactory);
         loggerRegistry.putIfAbsent(name, messageFactory, logger);
         return loggerRegistry.getLogger(name, messageFactory);

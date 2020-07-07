@@ -36,6 +36,9 @@ public class Log4jLoggerFactory extends AbstractLoggerAdapter<Logger> implements
     @Override
     protected Logger newLogger(final String name, final LoggerContext context) {
         final String key = Logger.ROOT_LOGGER_NAME.equals(name) ? LogManager.ROOT_LOGGER_NAME : name;
+
+        //getLogger(key)：实例化Logger
+        //使用Adaptor Log4jLogger包装Logger
         return new Log4jLogger(validateContext(context).getLogger(key), name);
     }
 
