@@ -17,6 +17,7 @@
 package org.apache.logging.log4j.message;
 
 /**
+ * 创建流消息。实现可以提供不同的消息格式语法
  * Creates flow messages. Implementations can provide different message format syntaxes.
  * @since 2.6
  */

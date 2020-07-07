@@ -43,6 +43,7 @@ public class XmlConfigurationFactory extends ConfigurationFactory {
      */
     @Override
     public Configuration getConfiguration(final LoggerContext loggerContext, final ConfigurationSource source) {
+        //解析xml，将xml文件封装成XmlConfiguration
         return new XmlConfiguration(loggerContext, source);
     }
 

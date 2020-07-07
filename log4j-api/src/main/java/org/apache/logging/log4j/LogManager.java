@@ -36,6 +36,12 @@ import org.apache.logging.log4j.util.StackLocatorUtil;
 import org.apache.logging.log4j.util.Strings;
 
 /**
+ * Log4j 日志系统的定位点。
+ *
+ * 此类最常见的用法是获取命名的 Logger。getLogger ()方法是基于调用类名获取命名 Logger 的最方便的方法。
+ * 此类还提供了一个方法，用于获取命名的Loggers：使用 String.format (String，Object...)样式消息而不是默认的参数化消息类型的，这些是通过 getFormatterLogger (Class)方法家族获得的。
+ * 其他服务提供者方法是通过 getContext ()和 getFactory ()方法家族提供的; 这些方法通常不适用于 Log4j 的典型用法。
+ *
  * The anchor point for the Log4j logging system. The most common usage of this class is to obtain a named
  * {@link Logger}. The method {@link #getLogger()} is provided as the most convenient way to obtain a named Logger based
  * on the calling class name. This class also provides method for obtaining named Loggers that use
@@ -86,11 +92,15 @@ public class LogManager {
             final SortedMap<Integer, LoggerContextFactory> factories = new TreeMap<>();
             // note that the following initial call to ProviderUtil may block until a Provider has been installed when
             // running in an OSGi environment
+
+            //关注此处...... ProviderUtil#hasProviders()
             if (ProviderUtil.hasProviders()) {
                 for (final Provider provider : ProviderUtil.getProviders()) {
+                    //类加载Log4jContextFactory(父类为LoggerContextFactory)，LoggerContextFactory类名封装在Log4jProvider中
                     final Class<? extends LoggerContextFactory> factoryClass = provider.loadLoggerContextFactory();
                     if (factoryClass != null) {
                         try {
+                            //从Log4jProvider中获取优先级，实例化Log4jContextFactory(调用无参构造)
                             factories.put(provider.getPriority(), factoryClass.newInstance());
                         } catch (final Exception e) {
                             LOGGER.error("Unable to create class {} specified in provider URL {}", factoryClass.getName(), provider
@@ -104,6 +114,7 @@ public class LogManager {
                             + "Please add log4j-core to the classpath. Using SimpleLogger to log to the console...");
                     factory = new SimpleLoggerContextFactory();
                 } else if (factories.size() == 1) {
+                    //将Log4jContextFactory赋值给成员变量factory
                     factory = factories.get(factories.lastKey());
                 } else {
                     final StringBuilder sb = new StringBuilder("Multiple logging implementations found: \n");
@@ -179,6 +190,12 @@ public class LogManager {
     }
 
     /**
+     *
+     * * LogManager#getContext(AppClassLoader, false)
+     * 执行逻辑：
+     *    Log4jContextFactory#getContext(FQCN org.apache.logging.log4j.LogManager, AppClassLoader, null, false);
+     *
+     *
      * Returns a LoggerContext.
      *
      * @param loader The ClassLoader for the context. If null the context will attempt to determine the appropriate
@@ -191,6 +208,7 @@ public class LogManager {
      */
     public static LoggerContext getContext(final ClassLoader loader, final boolean currentContext) {
         try {
+            //factory：Log4jContextFactory，在LogManager的静态代码块中初始化的，todo...细节后边补充
             return factory.getContext(FQCN, loader, null, currentContext);
         } catch (final IllegalStateException ex) {
             LOGGER.warn(ex.getMessage() + " Using SimpleLogger");

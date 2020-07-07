@@ -276,6 +276,10 @@ public abstract class ConfigurationFactory extends ConfigurationBuilderFactory {
     }
 
     /**
+     * ConfigurationFactory#getConfiguration(AsyncLoggerContext, AsyncContext@18b4aac2, null, ClassLoader)
+     * 执行逻辑：
+     *    ConfigurationFactory#getConfiguration(AsyncLoggerContext, AsyncContext@18b4aac2, null);
+     *
      * Returns the Configuration obtained using a given ClassLoader.
      * @param loggerContext The logger context
      * @param name The configuration name.
@@ -285,11 +289,14 @@ public abstract class ConfigurationFactory extends ConfigurationBuilderFactory {
      *
      * @return The Configuration.
      */
+    //loggerContext：AsyncLoggerContext
+    //name：AsyncContext@18b4aac2
     public Configuration getConfiguration(final LoggerContext loggerContext, final String name, final URI configLocation, final ClassLoader loader) {
         if (!isActive()) {
             return null;
         }
         if (loader == null) {
+            //ConfigurationFactory#getConfiguration
             return getConfiguration(loggerContext, name, configLocation);
         }
         if (isClassLoaderUri(configLocation)) {
@@ -356,6 +363,13 @@ public abstract class ConfigurationFactory extends ConfigurationBuilderFactory {
         private static final String ALL_TYPES = "*";
 
         /**
+         * ConfigurationFactory.Factory#getConfiguration：
+         * 执行逻辑：
+         *    （1）getFactories()：获取4个实现工厂ConfigurationFactory，分别对应4种配置文件，properties、xml、json、yml
+         *    （2）遍历工厂列表：其中，根据XmlConfigurationFactory#getConfiguration获取Configuration，此处获取为null
+         *    （3）Configuration为null，调用ConfigurationFactory#getConfiguration(final LoggerContext AsyncLoggerContext, final boolean isTest false, final String name null)
+         *    （4）如果Configuration还是为null，即没有配置文件，就会打印error日志，并new DefaultConfiguration();
+         *
          * Default Factory Constructor.
          * @param name The configuration name.
          * @param configLocation The configuration location.
@@ -384,11 +398,17 @@ public abstract class ConfigurationFactory extends ConfigurationBuilderFactory {
                     }
                     return getConfiguration(loggerContext, configLocationStr);
                 }
+
+                //getFactories()：有4个实现工厂，分别对应4种配置文件，properties、xml、json、yml
                 for (final ConfigurationFactory factory : getFactories()) {
+                    //通过调用factory#getSupportedTypes()方法获取各类配置文件后缀
+                    //xml文件后缀：XmlConfigurationFactory，new String[] {".xml", "*"};
                     final String[] types = factory.getSupportedTypes();
                     if (types != null) {
                         for (final String type : types) {
                             if (type.equals(ALL_TYPES)) {
+                                //XmlConfigurationFactory#getConfiguration，其实是调用父类的方法
+                                //config：null
                                 final Configuration config = factory.getConfiguration(loggerContext, name, configLocation);
                                 if (config != null) {
                                     return config;
@@ -421,6 +441,8 @@ public abstract class ConfigurationFactory extends ConfigurationBuilderFactory {
                 if (config == null) {
                     config = getConfiguration(loggerContext, false, name);
                     if (config == null) {
+                        //前面的几次获取结果config都为null
+                        //☆☆☆☆☆☆ 重点代码：真正加载配置的地方 ☆☆☆☆☆☆
                         config = getConfiguration(loggerContext, false, null);
                     }
                 }
@@ -428,6 +450,8 @@ public abstract class ConfigurationFactory extends ConfigurationBuilderFactory {
             if (config != null) {
                 return config;
             }
+
+            //如果config为null，即没有配置文件，就会打印error日志
             LOGGER.error("No Log4j 2 configuration file found. " +
                     "Using default configuration (logging only errors to the console), " +
                     "or user programmatically provided configurations. " +
@@ -467,11 +491,24 @@ public abstract class ConfigurationFactory extends ConfigurationBuilderFactory {
             return null;
         }
 
+        /**
+         * ConfigurationFactory#getConfiguration(final LoggerContext AsyncLoggerContext, final boolean isTest false, final String name null)
+         * 执行逻辑：
+         *    （1）拼接出配置文件的名字，configName：log4j2.xml或log4j2-test.xml
+         *    （2）ConfigurationSource.fromResource(configName, loader)：得到ConfigurationSource
+         *            通过类加载得到文件的url和inputStream，将url、inputStream和file封装到ConfigurationSource
+         *    （3）factory.getConfiguration：XmlConfigurationFactory#getConfiguration
+         *            读取和解析xml文件内容，将xml文件封装成XmlConfiguration
+         */
         private Configuration getConfiguration(final LoggerContext loggerContext, final boolean isTest, final String name) {
             final boolean named = Strings.isNotEmpty(name);
             final ClassLoader loader = LoaderUtil.getThreadContextClassLoader();
             for (final ConfigurationFactory factory : getFactories()) {
                 String configName;
+
+                //TEST_PREFIX = "log4j2-test";
+                //DEFAULT_PREFIX = "log4j2";
+                //故log4j2配置文件的名称不能随意定义，必须按要求来
                 final String prefix = isTest ? TEST_PREFIX : DEFAULT_PREFIX;
                 final String [] types = factory.getSupportedTypes();
                 if (types == null) {
@@ -484,11 +521,16 @@ public abstract class ConfigurationFactory extends ConfigurationBuilderFactory {
                     }
                     configName = named ? prefix + name + suffix : prefix + suffix;
 
+                    //以上操作目的是拼接出配置文件的名字，configName：log4j2.xml
+                    //ConfigurationSource#fromResource：通过类加载得到文件的url和inputStream，将url、inputStream和file封装到ConfigurationSource
                     final ConfigurationSource source = ConfigurationSource.fromResource(configName, loader);
                     if (source != null) {
                         if (!factory.isActive()) {
                             LOGGER.warn("Found configuration file {} for inactive ConfigurationFactory {}", configName, factory.getClass().getName());
                         }
+
+                        //读取xml文件内容，XmlConfigurationFactory#getConfiguration
+                        //解析xml，将xml文件封装成XmlConfiguration
                         return factory.getConfiguration(loggerContext, source);
                     }
                 }

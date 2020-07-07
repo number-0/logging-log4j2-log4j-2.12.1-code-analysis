@@ -17,6 +17,7 @@
 package org.apache.logging.log4j.core.impl;
 
 /**
+ * 使用位置信息的类应实现此接口。
  * Classes that use location information should implement this interface.
  */
 public interface LocationAware {

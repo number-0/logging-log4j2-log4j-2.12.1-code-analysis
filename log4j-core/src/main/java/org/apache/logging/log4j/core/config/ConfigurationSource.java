@@ -336,6 +336,7 @@ public class ConfigurationSource {
      * @return The ConfigurationSource for the configuration.
      */
     public static ConfigurationSource fromResource(final String resource, final ClassLoader loader) {
+        //url： file:/Users/songhengliang/java/workspace-shl/log-test/log4j2-test/target/classes/log4j2.xml
         final URL url = Loader.getResource(resource, loader);
         if (url == null) {
             return null;
@@ -353,6 +354,7 @@ public class ConfigurationSource {
 
         if (FileUtils.isFile(url)) {
             try {
+                //以上操作为类加载，然后实例化ConfigurationSource，将url、inputStream和file封装到ConfigurationSource
                 return new ConfigurationSource(is, FileUtils.fileFromUri(url.toURI()));
             } catch (final URISyntaxException ex) {
                 // Just ignore the exception.

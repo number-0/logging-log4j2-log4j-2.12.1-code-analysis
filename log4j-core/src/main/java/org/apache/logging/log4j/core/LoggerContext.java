@@ -239,6 +239,11 @@ public class LoggerContext extends AbstractLifeCycle
         return (LoggerContext) LogManager.getContext(loader, currentContext, configLocation);
     }
 
+    /**
+     * LoggerContext#start()
+     * 执行逻辑：
+     *    LoggerContext#reconfigure()
+     */
     @Override
     public void start() {
         LOGGER.debug("Starting LoggerContext[name={}, {}]...", getName(), this);
@@ -250,6 +255,9 @@ public class LoggerContext extends AbstractLifeCycle
             try {
                 if (this.isInitialized() || this.isStopped()) {
                     this.setStarting();
+
+                    //☆☆☆☆☆☆☆ 重点代码 ☆☆☆☆☆☆☆
+                    //LoggerContext#reconfigure
                     reconfigure();
                     if (this.configuration.isShutdownHookEnabled()) {
                         setUpShutdownHook();
@@ -477,12 +485,14 @@ public class LoggerContext extends AbstractLifeCycle
     @Override
     public Logger getLogger(final String name, final MessageFactory messageFactory) {
         // Note: This is the only method where we add entries to the 'loggerRegistry' ivar.
+        //从LoggerRegistry根据loggerName获取Logger， loggerName：com.shl.log.log4j2.Log4j2Test
         Logger logger = loggerRegistry.getLogger(name, messageFactory);
         if (logger != null) {
             AbstractLogger.checkMessageFactory(logger, messageFactory);
             return logger;
         }
 
+        //
         logger = newInstance(this, name, messageFactory);
         loggerRegistry.putIfAbsent(name, messageFactory, logger);
         return loggerRegistry.getLogger(name, messageFactory);
@@ -551,11 +561,17 @@ public class LoggerContext extends AbstractLifeCycle
     }
 
     /**
-     * Sets the Configuration to be used.
+     * LoggerContext#setConfiguration(final Configuration config)
+     * 执行逻辑：
+     *    启动配置：XmlConfiguration#start(AbstractConfiguration#start())，真正做配置解析的，并将配置封装成对象
      *
+     * Sets the Configuration to be used.
      * @param config The new Configuration.
      * @return The previous Configuration.
      */
+    //getConfiguration后就是setConfiguration
+    //getConfiguration只是获取Configuration，setConfiguration里边是真正将配置解析成java对象
+    //LoggerContext#setConfiguration(final Configuration config)
     public Configuration setConfiguration(final Configuration config) {
         if (config == null) {
             LOGGER.error("No configuration found for context '{}'.", contextName);
@@ -576,6 +592,9 @@ public class LoggerContext extends AbstractLifeCycle
                 map.putIfAbsent("hostName", "unknown");
             }
             map.putIfAbsent("contextName", contextName);
+
+            //☆☆☆☆☆☆ config.start, 真正做配置解析的 ☆☆☆☆☆☆
+            //XmlConfiguration#start(AbstractConfiguration#start())
             config.start();
             this.configuration = config;
             updateLoggers();
@@ -638,16 +657,25 @@ public class LoggerContext extends AbstractLifeCycle
     }
 
     /**
+     * LoggerContext#reconfigure(configLocation null)
+     * 执行逻辑：
+     *    （1）Configuration获取：ConfigurationFactory#getConfiguration(AsyncLoggerContext, AsyncContext@18b4aac2, null, ClassLoader)
+     *    （2）setConfiguration(Configuration)：内部将配置解析成java对象
+     *
      * Reconfigures the context.
      */
+    //configURI：null
     private void reconfigure(final URI configURI) {
         final ClassLoader cl = ClassLoader.class.isInstance(externalContext) ? (ClassLoader) externalContext : null;
         LOGGER.debug("Reconfiguration started for context[name={}] at URI {} ({}) with optional ClassLoader: {}",
                 contextName, configURI, this, cl);
+        //ConfigurationFactory#getConfiguration，todo...ConfigurationFactory的创建后续补充
         final Configuration instance = ConfigurationFactory.getInstance().getConfiguration(this, contextName, configURI, cl);
         if (instance == null) {
             LOGGER.error("Reconfiguration failed: No configuration found for '{}' at '{}' in '{}'", contextName, configURI, cl);
         } else {
+            //LoggerContext#setConfiguration(final Configuration config)
+            //getConfiguration只是获取Configuration，setConfiguration里边是真正将配置解析成java对象
             setConfiguration(instance);
             /*
              * instance.start(); Configuration old = setConfiguration(instance); updateLoggers(); if (old != null) {
@@ -660,11 +688,16 @@ public class LoggerContext extends AbstractLifeCycle
     }
 
     /**
+     * LoggerContext#reconfigure()
+     * 执行逻辑：
+     *    LoggerContext#reconfigure(configLocation null)
+     *
      * Reconfigures the context. Log4j does not remove Loggers during a reconfiguration. Log4j will create new
      * LoggerConfig objects and Log4j will point the Loggers at the new LoggerConfigs. Log4j will free the old
      * LoggerConfig, along with old Appenders and Filters.
      */
     public void reconfigure() {
+        //configLocation：null
         reconfigure(configLocation);
     }
 

@@ -279,12 +279,20 @@ public abstract class AbstractConfiguration extends AbstractFilterable implement
 	}
 
 	/**
+     * 真正做配置解析的：XmlConfiguration#start(AbstractConfiguration#start())
+     *
      * Start the configuration.
      */
     @Override
     public void start() {
         // Preserve the prior behavior of initializing during start if not initialized.
         if (getState().equals(State.INITIALIZING)) {
+
+            /*
+            initialize()内部会执行如下几步setup();
+            setupAdvertisement();
+            doConfigure()：对刚刚获取的configuration进行解析，然后塞到正确的地方
+            */
             initialize();
         }
         LOGGER.debug("Starting configuration {}", this);
@@ -297,10 +305,12 @@ public abstract class AbstractConfiguration extends AbstractFilterable implement
         }
         final Set<LoggerConfig> alreadyStarted = new HashSet<>();
         for (final LoggerConfig logger : loggerConfigs.values()) {
+            //开启logger
             logger.start();
             alreadyStarted.add(logger);
         }
         for (final Appender appender : appenders.values()) {
+            //开启appender
             appender.start();
         }
         if (!alreadyStarted.contains(root)) { // LOG4J2-392

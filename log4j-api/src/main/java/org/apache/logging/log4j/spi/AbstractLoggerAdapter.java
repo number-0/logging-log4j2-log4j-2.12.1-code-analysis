@@ -43,14 +43,29 @@ public abstract class AbstractLoggerAdapter<L> implements LoggerAdapter<L>, Logg
 
     private final ReadWriteLock lock = new ReentrantReadWriteLock (true);
 
+    /**
+     * Log4jLoggerFactory#getLogger：实际调用父类AbstractLoggerAdapter#getLogger
+     *  整体实现逻辑：
+     *    （1）通过Log4jLoggerFactory#getContext获取LoggerContext
+     *    （2）从map根据LoggerContext获取ConcurrentMap<String, Logger>：Map<LoggerContext, ConcurrentMap<String, L>>
+     *    （3）从ConcurrentMap根据name获取Logger，若不存在则实例化Logger后置入ConcurrentMap
+     *    （4）返回Logger
+     */
     @Override
     public L getLogger(final String name) {
+        //Log4jLoggerFactory#getContext
         final LoggerContext context = getContext();
+         /*
+        AbstractLoggerAdapter#getLoggersInContext：根据LoggerContext获取Map
+            Map<LoggerContext, ConcurrentMap<String, L>> registry = new ConcurrentHashMap<>();
+        */
         final ConcurrentMap<String, L> loggers = getLoggersInContext(context);
+        //从map根据name获取Logger
         final L logger = loggers.get(name);
         if (logger != null) {
             return logger;
         }
+        //不存在，则实例化一个Logger并置入到本地缓存
         loggers.putIfAbsent(name, newLogger(name, context));
         return loggers.get(name);
     }
@@ -122,11 +137,17 @@ public abstract class AbstractLoggerAdapter<L> implements LoggerAdapter<L>, Logg
     protected abstract LoggerContext getContext();
 
     /**
+     * AbstractLoggerAdapter#getContext(com.shl.log.log4j2.Log4j2Test)
+     * 执行逻辑：
+     *    LogManager会利用AppClassLoader获取上下文：LogManager#getContext(AppClassLoader, false);
+     *
+     *
      * Gets the {@link LoggerContext} associated with the given caller class.
      *
      * @param callerClass the caller class
      * @return the LoggerContext for the calling class
      */
+    //final Class<?> callerClass：com.shl.log.log4j2.Log4j2Test
     protected LoggerContext getContext(final Class<?> callerClass) {
         ClassLoader cl = null;
         if (callerClass != null) {

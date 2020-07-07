@@ -27,14 +27,31 @@ import java.util.concurrent.ConcurrentMap;
 import org.apache.logging.log4j.message.MessageFactory;
 
 /**
+ * LoggerRegistry：Logger的缓存容器
  * Convenience class to be used by {@code LoggerContext} implementations.
  */
 public class LoggerRegistry<T extends ExtendedLogger> {
     private static final String DEFAULT_FACTORY_KEY = AbstractLogger.DEFAULT_MESSAGE_FACTORY_CLASS.getName();
+
+    /**
+     * MapFactory内部封装了Map，用于生成map
+     *  Map<String, T>：
+     *      k : loggerName, eg com.shl.log.log4j2.Log4j2Test
+     *      v : Logger
+     *
+     */
     private final MapFactory<T> factory;
+
+    /**
+     * Map<String, Map<String, T>>
+     *      k : MessageFactory全类名, 默认值 org.apache.logging.log4j.message.ReusableMessageFactory
+     *      v : MapFactory
+     *
+     */
     private final Map<String, Map<String, T>> map;
 
     /**
+     * 接口来控制注册表用于存储记录器的数据结构
      * Interface to control the data structure used by the registry to store the Loggers.
      * @param <T> subtype of {@code ExtendedLogger}
      */
@@ -47,6 +64,7 @@ public class LoggerRegistry<T extends ExtendedLogger> {
     }
 
     /**
+     * 生成 ConcurrentHashMaps，供注册表用于存储日志记录器
      * Generates ConcurrentHashMaps for use by the registry to store the Loggers.
      * @param <T> subtype of {@code ExtendedLogger}
      */
@@ -68,6 +86,7 @@ public class LoggerRegistry<T extends ExtendedLogger> {
     }
 
     /**
+     * 生成 WeakHashMaps，供注册表用于存储日志记录器
      * Generates WeakHashMaps for use by the registry to store the Loggers.
      * @param <T> subtype of {@code ExtendedLogger}
      */

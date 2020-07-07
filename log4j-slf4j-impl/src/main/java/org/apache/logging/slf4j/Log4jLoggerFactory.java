@@ -41,6 +41,7 @@ public class Log4jLoggerFactory extends AbstractLoggerAdapter<Logger> implements
 
     @Override
     protected LoggerContext getContext() {
+        //获取调用的类：org.slf4j.LoggerFactory
         final Class<?> anchor = StackLocatorUtil.getCallerClass(FQCN, PACKAGE);
         return anchor == null ? LogManager.getContext() : getContext(StackLocatorUtil.getCallerClass(anchor));
     }

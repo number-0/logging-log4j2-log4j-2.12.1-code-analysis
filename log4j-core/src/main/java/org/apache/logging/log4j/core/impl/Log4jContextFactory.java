@@ -56,6 +56,7 @@ public class Log4jContextFactory implements LoggerContextFactory, ShutdownCallba
      * Initializes the ContextSelector from system property {@link Constants#LOG4J_CONTEXT_SELECTOR}.
      */
     public Log4jContextFactory() {
+        //此时会创建selector：AsyncLoggerContextSelector（父类的ClassLoaderContextSelector）
         this(createContextSelector(), createShutdownCallbackRegistry());
     }
 
@@ -95,9 +96,11 @@ public class Log4jContextFactory implements LoggerContextFactory, ShutdownCallba
 
     private static ContextSelector createContextSelector() {
         try {
+            //实例化selector：AsyncLoggerContextSelector（父类的ClassLoaderContextSelector）
             final ContextSelector selector = Loader.newCheckedInstanceOfProperty(Constants.LOG4J_CONTEXT_SELECTOR,
                 ContextSelector.class);
             if (selector != null) {
+                //return selector
                 return selector;
             }
         } catch (final Exception e) {
@@ -134,6 +137,11 @@ public class Log4jContextFactory implements LoggerContextFactory, ShutdownCallba
     }
 
     /**
+     *  * Log4jContextFactory#getContext(FQCN org.apache.logging.log4j.LogManager, AppClassLoader, null, false);
+     * 执行逻辑：
+     *    (1)获取LoggerContext(AsyncLoggerContext)：AsyncLoggerContextSelector#getContext(FQCN org.apache.logging.log4j.LogManager, AppClassLoader, false);
+     *    (2)启动LoggerContext：AsyncLoggerContext#start()
+     *
      * Loads the LoggerContext using the ContextSelector.
      * @param fqcn The fully qualified class name of the caller.
      * @param loader The ClassLoader to use or null.
@@ -142,14 +150,23 @@ public class Log4jContextFactory implements LoggerContextFactory, ShutdownCallba
      * @param externalContext An external context (such as a ServletContext) to be associated with the LoggerContext.
      * @return The LoggerContext.
      */
+    //facn：org.apache.logging.log4j.LogManager
+    //loader：AppClassLoader
+    //externalContext：null
+    //currentContext：false
     @Override
     public LoggerContext getContext(final String fqcn, final ClassLoader loader, final Object externalContext,
                                     final boolean currentContext) {
+        //selector：AsyncLoggerContextSelector#getContext(实际为父类的ClassLoaderContextSelector中#getContext中)
+        //todo...selector初始化后边补充
+        //ctx：AsyncLoggerContext
         final LoggerContext ctx = selector.getContext(fqcn, loader, currentContext);
         if (externalContext != null && ctx.getExternalContext() == null) {
             ctx.setExternalContext(externalContext);
         }
         if (ctx.getState() == LifeCycle.State.INITIALIZED) {
+            //重点代码：加载配置入口
+            //AsyncLoggerContext#start()
             ctx.start();
         }
         return ctx;

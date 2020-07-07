@@ -62,14 +62,20 @@ public final class ProviderUtil {
     // wait for a Provider to be installed. See LOG4J2-373
     private static volatile ProviderUtil instance;
 
+    /**
+     * 构造函数：ProviderUtil()
+     */
     private ProviderUtil() {
         for (final ClassLoader classLoader : LoaderUtil.getClassLoaders()) {
             try {
+                //ProviderUtil#loadProviders
                 loadProviders(classLoader);
             } catch (final Throwable ex) {
                 LOGGER.debug("Unable to retrieve provider from ClassLoader {}", classLoader, ex);
             }
         }
+
+        //不会走此for循环，因为PROVIDER_RESOURCE=META-INF/log4j-provider.properties已经删除了
         for (final LoaderUtil.UrlResource resource : LoaderUtil.findUrlResources(PROVIDER_RESOURCE)) {
             loadProvider(resource.getUrl(), resource.getClassLoader());
         }
@@ -108,6 +114,8 @@ public final class ProviderUtil {
 		final ServiceLoader<Provider> serviceLoader = ServiceLoader.load(Provider.class, classLoader);
 		for (final Provider provider : serviceLoader) {
 			if (validVersion(provider.getVersions()) && !PROVIDERS.contains(provider)) {
+                //通过spi获取Log4jProvider，并添加到Set
+                //Log4jProvider
 				PROVIDERS.add(provider);
 			}
 		}
@@ -131,6 +139,7 @@ public final class ProviderUtil {
     }
 
     public static boolean hasProviders() {
+        //懒加载创建Provider
         lazyInit();
         return !PROVIDERS.isEmpty();
     }
@@ -147,6 +156,7 @@ public final class ProviderUtil {
                 STARTUP_LOCK.lockInterruptibly();
                 try {
                     if (instance == null) {
+                        //内部会创建Provider
                         instance = new ProviderUtil();
                     }
                 } finally {

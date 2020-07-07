@@ -66,13 +66,20 @@ public class AsyncLoggerContext extends LoggerContext {
     }
 
     /*
+     * AsyncLoggerContext#start()
+     * 执行逻辑：
+     *    （1）启动disruptor：loggerDisruptor.start();
+     *    （2）启动LoggerContext：LoggerContext#start()
+     *
      * (non-Javadoc)
      *
      * @see org.apache.logging.log4j.core.LoggerContext#start()
      */
     @Override
     public void start() {
+        //disruptor习惯，todo...后续补充
         loggerDisruptor.start();
+        //LoggerContext#start()
         super.start();
     }
 
