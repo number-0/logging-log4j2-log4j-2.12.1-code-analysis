@@ -861,17 +861,20 @@ public abstract class AbstractConfiguration extends AbstractFilterable implement
      */
     @Override
     public LoggerConfig getLoggerConfig(final String loggerName) {
+        //根据全类名从Map获取LoggerConfig
         LoggerConfig loggerConfig = loggerConfigs.get(loggerName);
         if (loggerConfig != null) {
             return loggerConfig;
         }
         String substr = loggerName;
+        //去掉名字中.后面的部分，然后从Map获取LoggerConfig，即根据包名获取LoggerConfig
         while ((substr = NameUtil.getSubName(substr)) != null) {
             loggerConfig = loggerConfigs.get(substr);
             if (loggerConfig != null) {
                 return loggerConfig;
             }
         }
+        //返回RootLoggerConfig
         return root;
     }
 
